@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Up Produk Digital - Xiao-Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --bs-body-bg-rgb: 248, 249, 250;
+            --bs-tertiary-bg-rgb: 255, 255, 255;
+            --bs-border-color: #dee2e6;
+            --bs-primary-rgb: 13, 110, 253;
+        }
+
+        [data-bs-theme="dark"] {
+            --bs-body-bg-rgb: 18, 18, 18;
+            --bs-tertiary-bg-rgb: 30, 30, 30;
+            --bs-border-color: #444;
+            --bs-primary-rgb: 106, 17, 203;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background-color: rgb(var(--bs-body-bg-rgb));
+            transition: background-color 0.3s ease;
+        }
+
+        body {
+             display: flex;
+             flex-direction: column;
+             min-height: 100vh;
+        }
+
+        main {
+             flex-grow: 1;
+        }
+
+        .view {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            min-height: calc(100vh - 150px);
+        }
+        .view.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+         .view.hiding {
+            display: block;
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+        .view:not(.active):not(.hiding) {
+            display: none;
+        }
+
+
+        .selection-item {
+            cursor: pointer;
+            border-radius: 0.75rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+            height: 100%;
+            overflow: hidden;
+            border: 1px solid var(--bs-border-color);
+            background-color: var(--bs-tertiary-bg);
+        }
+        .selection-item .card-body {
+            transition: background-color 0.2s ease;
+        }
+        .selection-item:hover:not(.status-unavailable) {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+        }
+        .selection-item:hover:not(.status-unavailable) .card-body {
+            background-color: rgba(var(--bs-primary-rgb), 0.05);
+        }
+        .selection-item.active:not(.status-unavailable) {
+            border-color: var(--bs-primary) !important;
+            box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.4);
+            transform: translateY(0);
+        }
+
+        .selection-item.status-unavailable {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .selection-item.status-unavailable:hover .card-body {
+            background-color: var(--bs-tertiary-bg);
+        }
+        .selection-item.status-unavailable .text-primary {
+             color: var(--bs-body-secondary) !important;
+        }
+         .selection-item.status-unavailable .text-body-secondary {
+            font-style: italic;
+         }
+
+
+        .selection-item .card-body img {
+             max-width: 100%;
+        }
+         .selection-item .card-body .fw-semibold {
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+         }
+
+         .product-details {
+             font-size: 0.85em;
+             color: var(--bs-body-secondary);
+             margin-top: 5px;
+             border-top: 1px solid var(--bs-border-color);
+             padding-top: 5px;
+         }
+         .product-details div {
+             margin-bottom: 2px;
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+         }
+         .product-details strong {
+             font-weight: 600;
+             margin-right: 5px;
+         }
+          .product-note {
+              font-size: 0.75em;
+              color: var(--bs-body-secondary);
+              font-style: italic;
+              margin-top: 5px;
+          }
+
+
+        .loader-container {
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .loader-content, .loader-error {
+            padding: 20px;
+        }
+         .loader-error {
+             width: 75%;
+             max-width: 500px;
+             margin-left: auto;
+             margin-right: auto;
+         }
+
+
+        .theme-icon-light, .theme-icon-dark { display: none; }
+        html[data-bs-theme="light"] .theme-icon-light { display: inline-block; }
+        html[data-bs-theme="dark"] .theme-icon-dark { display: inline-block; }
+
+        .btn-loader.spinner-border { vertical-align: middle; margin-right: .5rem; }
+
+        #submit-button .btn-text { display: inline-block; }
+        #submit-button .btn-loader { display: none; }
+
+        #submit-button.submitting .btn-text { display: none; }
+        #submit-button.submitting .btn-loader { display: inline-block; }
+
+
+        .back-button {
+             color: var(--bs-body-secondary) !important;
+             transition: color 0.2s ease;
+         }
+        .back-button:hover {
+            color: var(--bs-primary) !important;
+        }
+    </style>
+</head>
+<body class="bg-body-tertiary">
+    <canvas id="bg-canvas"></canvas>
+
+    <header class="navbar navbar-expand-lg bg-body-tertiary shadow-sm sticky-top">
+        <nav class="container-fluid">
+            <a class="navbar-brand fw-bolder" href="/">
+                <i class="bi bi-lightning-charge-fill text-primary me-1"></i> Xiao-Store
+            </a>
+             <span class="navbar-text me-3 text-body-secondary">
+                 Top Up Produk Digital
+             </span>
+            <button id="theme-toggle" class="btn fs-5" aria-label="Toggle theme">
+                <i class="bi bi-sun-fill theme-icon-light"></i>
+                <i class="bi bi-moon-stars-fill theme-icon-dark"></i>
+            </button>
+        </nav>
+    </header>
+
+    <main class="container-fluid py-4 py-lg-5">
+
+        <div id="loader-view" class="view active">
+             <div id="loader-content" class="loader-container">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                <p class="mt-3 fs-5 text-body-secondary">Memuat layanan...</p>
+            </div>
+            <div id="loader-error" class="alert alert-danger mt-3 d-none loader-error" role="alert">
+                <i class="bi bi-x-octagon-fill me-2"></i> <span id="loader-error-text"></span>
+            </div>
+        </div>
+
+        <div id="category-view" class="view">
+            <h1 class="mb-4 fw-bold">Pilih Kategori</h1>
+            <div id="category-list" class="row g-3 g-lg-4"></div>
+        </div>
+
+        <div id="provider-view" class="view">
+            <div class="d-flex align-items-center mb-4">
+                <button class="btn fs-3 p-0 me-3 back-button" data-target="category-view" aria-label="Kembali ke Kategori"><i class="bi bi-arrow-left-circle-fill"></i></button>
+                <h1 class="fw-bold mb-0" id="provider-title"></h1>
+            </div>
+            <div id="provider-list" class="row g-3 g-lg-4"></div>
+        </div>
+
+        <div id="product-view" class="view">
+            <div class="d-flex align-items-center mb-4">
+                 <button class="btn fs-3 p-0 me-3 back-button" data-target="provider-view" aria-label="Kembali ke Provider"><i class="bi bi-arrow-left-circle-fill"></i></button>
+                <h1 class="fw-bold mb-0" id="product-title"></h1>
+            </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-lg-4">
+                    <form id="order-form" class="row g-3 align-items-center">
+                        <div class="col-12 col-md">
+                            <label for="tujuan" class="form-label fw-semibold visually-hidden">Nomor Tujuan / User ID</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text"><i class="bi bi-phone-vibrate"></i></span>
+                                <input type="text" id="tujuan" class="form-control" placeholder="Masukkan nomor/ID tujuan..." required>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button type="submit" id="submit-button" class="btn btn-primary btn-lg w-100 fw-bold" disabled>
+                                <span class="btn-loader spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span class="btn-text"><i class="bi bi-arrow-right-circle-fill me-2"></i> Lanjut</span>
+                            </button>
+                        </div>
+                    </form>
+                    <div id="selected-product-details" class="mt-3" style="display: none;">
+                        <hr>
+                        <p class="mb-1 text-body"><strong class="me-2 text-secondary"><i class="bi bi-box-seam"></i> Produk:</strong> <span id="selected-product-name" class="text-body-secondary"></span></p>
+                        <p class="mb-1 text-body"><strong class="me-2 text-success"><i class="bi bi-tag-fill"></i> Harga:</strong> <span id="selected-product-price" class="text-primary fw-bold"></span></p>
+                        <p id="selected-product-note" class="small text-body-secondary mt-2 border-start border-3 border-info ps-2 mb-0"></p>
+                    </div>
+                    <div id="error-message" class="alert alert-danger mt-3 d-none" role="alert">
+                         <i class="bi bi-exclamation-triangle-fill me-2"></i> <span id="error-message-text"></span>
+                    </div>
+                </div>
+            </div>
+            <h3 class="fw-semibold mb-3">Pilih Produk</h3>
+            <div id="product-list" class="row g-3 g-lg-4"></div>
+        </div>
+
+    </main>
+
+    <footer class="bg-body-tertiary py-4 text-center text-body-secondary border-top">
+         <div class="container">
+             <p class="mb-0">© 2025 Xiao-Store. Semua Hak Cipta Dilindungi.</p>
+         </div>
+    </footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script>
+    const theme = {
+        init() {
+            this.toggleButton = document.getElementById('theme-toggle');
+            this.applyTheme(localStorage.getItem('theme') || 'light');
+            this.toggleButton.addEventListener('click', () => this.toggle());
+        },
+        applyTheme(themeName) {
+            document.documentElement.setAttribute('data-bs-theme', themeName);
+            localStorage.setItem('theme', themeName);
+            const event = new Event('themeChange');
+            document.getElementById('bg-canvas').dispatchEvent(event);
+        },
+        toggle() { this.applyTheme(document.documentElement.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light'); }
+    };
+
+    const canvasAnimation = {
+        init() {
+            this.canvas = document.getElementById('bg-canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.particles = [];
+            this.particleCount = window.innerWidth > 768 ? 80 : 30;
+            this.connectDistance = 120;
+            window.addEventListener('resize', () => this.resize());
+            this.canvas.addEventListener('themeChange', () => this.updateColors());
+            this.resize(); this.animate();
+        },
+        resize() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.particleCount = window.innerWidth > 768 ? 80 : 30;
+            this.particles = [];
+            for (let i = 0; i < this.particleCount; i++) {
+                this.particles.push({
+                    x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height,
+                    dx: (Math.random() - 0.5) * 0.4, dy: (Math.random() - 0.5) * 0.4,
+                    radius: Math.random() * 1.5 + 1,
+                });
+            }
+             this.updateColors();
+        },
+        updateColors() {
+             this.particleColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-border-color').trim();
+             this.ctx.fillStyle = this.particleColor;
+             this.ctx.strokeStyle = this.particleColor;
+        },
+        animate() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.updateColors();
+
+            this.particles.forEach(p => {
+                p.x += p.dx; p.y += p.dy;
+                if (p.x < 0 || p.x > this.canvas.width) p.dx *= -1;
+                if (p.y < 0 || p.y > this.canvas.height) p.dy *= -1;
+                this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); this.ctx.fill();
+            });
+            for (let i = 0; i < this.particles.length; i++) {
+                for (let j = i + 1; j < this.particles.length; j++) {
+                    const dist = Math.hypot(this.particles[i].x - this.particles[j].x, this.particles[i].y - this.particles[j].y);
+                    if (dist < this.connectDistance) {
+                        this.ctx.beginPath(); this.ctx.globalAlpha = 1 - dist / this.connectDistance;
+                        this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+                        this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+                        this.ctx.stroke();
+                    }
+                }
+            }
+            this.ctx.globalAlpha = 1; requestAnimationFrame(() => this.animate());
+        }
+    };
+
+    const app = {
+        allProducts: [], state: { category: null, provider: null, product: null, },
+        elements: {
+            views: document.querySelectorAll('.view'),
+            loaderView: document.getElementById('loader-view'),
+            loaderContent: document.getElementById('loader-content'),
+            loaderError: document.getElementById('loader-error'),
+            loaderErrorText: document.getElementById('loader-error-text'),
+            categoryList: document.getElementById('category-list'),
+            providerList: document.getElementById('provider-list'), productList: document.getElementById('product-list'),
+            providerTitle: document.getElementById('provider-title'), productTitle: document.getElementById('product-title'),
+            backButtons: document.querySelectorAll('[data-target]'), orderForm: document.getElementById('order-form'),
+            tujuanInput: document.getElementById('tujuan'), selectedProductDetails: document.getElementById('selected-product-details'),
+            selectedProductName: document.getElementById('selected-product-name'),
+            selectedProductPrice: document.getElementById('selected-product-price'),
+            selectedProductNote: document.getElementById('selected-product-note'),
+            submitButton: document.getElementById('submit-button'), submitButtonText: document.querySelector('#submit-button .btn-text'), submitButtonLoader: document.querySelector('#submit-button .btn-loader'),
+            errorMessage: document.getElementById('error-message'), errorMessageText: document.getElementById('error-message-text'),
+        },
+
+        init() {
+            theme.init(); canvasAnimation.init(); this.bindEvents();
+            this.showView('loader-view');
+            this.fetchAndLoadProducts();
+        },
+
+        async showView(viewId) {
+            const currentView = document.querySelector('.view.active');
+            const targetView = document.getElementById(viewId);
+
+            if (currentView === targetView) return;
+
+            if (currentView) {
+                currentView.classList.add('hiding');
+                currentView.classList.remove('active');
+                await new Promise(resolve => {
+                    const handler = () => {
+                        currentView.classList.remove('hiding');
+                        currentView.style.display = 'none';
+                        currentView.removeEventListener('animationend', handler);
+                        resolve();
+                    };
+                     currentView.addEventListener('animationend', handler, { once: true });
+                });
+            }
+             targetView.style.display = 'block';
+            targetView.classList.add('active');
+        },
+
+        async fetchAndLoadProducts() {
+            this.elements.loaderContent.classList.remove('d-none');
+            this.elements.loaderError.classList.add('d-none');
+            this.elements.loaderErrorText.textContent = '';
+
+            try {
+                const response = await fetch('/api/layanan');
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                     const errorMsg = data.message || `Gagal memuat data: ${response.status}`;
+                     throw new Error(errorMsg);
+                }
+                if (!data.data || !Array.isArray(data.data)) {
+                    throw new Error('Format data layanan tidak valid.');
+                }
+
+                this.allProducts = data.data;
+
+                if (this.allProducts.length === 0) {
+                    throw new Error('Tidak ada layanan yang tersedia saat ini.');
+                }
+
+                this.renderCategories();
+                this.showView('category-view');
+
+            } catch (error) {
+                this.elements.loaderContent.classList.add('d-none');
+                this.elements.loaderErrorText.textContent = error.message || 'Terjadi kesalahan saat memuat layanan.';
+                this.elements.loaderError.classList.remove('d-none');
+                 this.showView('loader-view');
+            }
+        },
+
+        bindEvents() {
+            this.elements.backButtons.forEach(btn => btn.addEventListener('click', (e) => {
+                const targetViewId = e.currentTarget.dataset.target;
+                if (targetViewId === 'provider-view') {
+                    this.renderProviders(this.state.category);
+                } else if (targetViewId === 'category-view') {
+                     this.renderCategories();
+                }
+                 this.state.product = null;
+                 this.resetProductSelection();
+                this.showView(targetViewId);
+            }));
+
+            this.elements.orderForm.addEventListener('submit', (e) => this.handleSubmit(e));
+
+             this.elements.productList.addEventListener('click', (e) => {
+                 const card = e.target.closest('.selection-item');
+                 if (card && this.elements.productList.contains(card)) {
+                     const productCode = card.dataset.key;
+                     const selectedProduct = this.allProducts.find(p => p.code === productCode);
+
+                     if (selectedProduct && selectedProduct.status === 'available') {
+                         this.elements.productList.querySelectorAll('.card').forEach(item => item.classList.remove('active'));
+                         card.classList.add('active');
+                         this.state.product = selectedProduct;
+                         this.updateOrderForm();
+                         this.checkFormValidity();
+                     } else {
+                        this.showError('Produk ini sedang tidak tersedia.');
+                        this.state.product = null;
+                         this.resetProductSelection();
+                         this.checkFormValidity();
+                     }
+                 }
+            });
+
+             this.elements.categoryList.addEventListener('click', (e) => {
+                 const card = e.target.closest('.selection-item');
+                  if (card && this.elements.categoryList.contains(card)) {
+                     const categoryName = card.dataset.key;
+
+                     this.state.category = categoryName;
+                     this.renderProviders(this.state.category);
+                     this.showView('provider-view');
+                 }
+             });
+
+             this.elements.providerList.addEventListener('click', (e) => {
+                 const card = e.target.closest('.selection-item');
+                 if (card && this.elements.providerList.contains(card)) {
+                     this.state.provider = card.dataset.key;
+                     this.renderProducts(this.state.category, this.state.provider);
+                     this.showView('product-view');
+                 }
+             });
+
+             this.elements.tujuanInput.addEventListener('input', () => this.checkFormValidity());
+        },
+
+        checkFormValidity() {
+             const isProductSelected = this.state.product !== null && this.state.product.status === 'available';
+             const isTujuanEntered = this.elements.tujuanInput.value.trim() !== '';
+             this.elements.submitButton.disabled = !(isProductSelected && isTujuanEntered);
+        },
+
+        renderItem(item, type) {
+            let imgHtml = '';
+            if (item.img && item.img !== 'null') {
+                const imgSize = type === 'product' ? '30px' : '40px';
+                imgHtml = `<img src="${item.img}" alt="${item.name}" style="height: ${imgSize}; object-fit: contain;" class="mb-2" onerror="this.style.display='none'">`;
+            } else if (type !== 'product') {
+                 imgHtml = `<i class="bi bi-grid-fill fs-3 text-primary mb-2"></i>`;
+                 if(type === 'category') {
+                     if(item.name.toLowerCase().includes('game')) imgHtml = `<i class="bi bi-controller fs-3 text-primary mb-2"></i>`;
+                     else if(item.name.toLowerCase().includes('pulsa')) imgHtml = `<i class="bi bi-phone fs-3 text-primary mb-2"></i>`;
+                     else if(item.name.toLowerCase().includes('data')) imgHtml = `<i class="bi bi-database fs-3 text-primary mb-2"></i>`;
+                     else if(item.name.toLowerCase().includes('listrik') || item.name.toLowerCase().includes('token')) imgHtml = `<i class="bi bi-lightbulb fs-3 text-primary mb-2"></i>`;
+                      else if(item.name.toLowerCase().includes('uang digital') || item.name.toLowerCase().includes('e-money')) imgHtml = `<i class="bi bi-wallet2 fs-3 text-primary mb-2"></i>`;
+                      else if(item.name.toLowerCase().includes('vocer') || item.name.toLowerCase().includes('voucher')) imgHtml = `<i class="bi bi-ticket-perforated fs-3 text-primary mb-2"></i>`;
+                      else if(item.name.toLowerCase().includes('streaming') || item.name.toLowerCase().includes('tv')) imgHtml = `<i class="bi bi-tv fs-3 text-primary mb-2"></i>`;
+                      else if(item.name.toLowerCase().includes('lainnya')) imgHtml = `<i class="bi bi-three-dots fs-3 text-primary mb-2"></i>`;
+                 }
+            }
+
+            let statusHtml = '';
+            let noteHtml = '';
+            let itemClass = 'selection-item';
+            if (type === 'product') {
+                 itemClass += ` status-${item.status}`;
+                 statusHtml = `<div class="text-body-secondary small">${item.status === 'available' ? '<span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i> Tersedia</span>' : '<span class="badge bg-danger-subtle text-danger"><i class="bi bi-x-circle-fill me-1"></i> Tidak Tersedia</span>'}</div>`;
+                 if (item.note) {
+                     noteHtml = `<div class="product-note">${item.note}</div>`;
+                 }
+            }
+
+            return `
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="card ${itemClass} h-100 shadow-sm" data-key="${item.code || item.name}">
+                        <div class="card-body d-flex flex-column justify-content-start align-items-center text-center p-2 p-lg-3">
+                            ${imgHtml}
+                            <div class="fw-semibold small text-truncate w-100 px-1">${item.name}</div>
+                            ${item.price !== undefined ? `<div class="small fw-bold text-primary mt-1">Rp ${parseInt(item.price).toLocaleString('id-ID')}</div>` : ''}
+                             ${type === 'product' ? statusHtml + noteHtml : ''}
+                        </div>
+                    </div>
+                </div>`;
+        },
+        renderCategories() {
+            this.state = { category: null, provider: null, product: null };
+            const categories = [...new Set(this.allProducts.map(p => p.category))].sort();
+            this.elements.categoryList.innerHTML = categories.map(cat => this.renderItem({name: cat, key: cat}, 'category')).join('');
+             this.resetProductSelection();
+        },
+        renderProviders(category) {
+            this.state.provider = null; this.state.product = null;
+            this.resetProductSelection();
+            this.elements.providerTitle.textContent = category;
+            const providers = [...new Set(this.allProducts.filter(p => p.category === category).map(p => JSON.stringify({name: p.provider, img: p.img_url})))].map(p => JSON.parse(p)).sort((a, b) => a.name.localeCompare(b.name));
+             if (providers.length === 0) {
+                 this.elements.providerList.innerHTML = '<div class="col-12"><div class="alert alert-info text-center" role="alert"><i class="bi bi-info-circle-fill me-2"></i> Provider tidak tersedia untuk kategori ini.</div></div>';
+             } else {
+                this.elements.providerList.innerHTML = providers.map(p => this.renderItem({name: p.name, img: p.img, key: p.name}, 'provider')).join('');
+             }
+        },
+        renderProducts(category, provider) {
+            this.state.product = null;
+            this.resetProductSelection();
+            this.elements.productTitle.textContent = provider;
+            const products = this.allProducts.filter(p => p.category === category && p.provider === provider).sort((a, b) => parseInt(a.price) - parseInt(b.price));
+             if (products.length === 0) {
+                 this.elements.productList.innerHTML = '<div class="col-12"><div class="alert alert-info text-center" role="alert"><i class="bi bi-info-circle-fill me-2"></i> Produk tidak tersedia untuk provider ini.</div></div>';
+             } else {
+                this.elements.productList.innerHTML = products.map(p => this.renderItem(p, 'product')).join('');
+            }
+        },
+        updateOrderForm() {
+            this.elements.errorMessage.classList.add('d-none');
+            this.elements.errorMessageText.textContent = '';
+
+            if (!this.state.product || this.state.product.status !== 'available') {
+                this.elements.selectedProductDetails.style.display = 'none';
+                 this.checkFormValidity();
+                return;
+            }
+            this.elements.selectedProductDetails.style.display = 'block';
+            this.elements.selectedProductName.textContent = this.state.product.name;
+            this.elements.selectedProductPrice.textContent = `Rp ${parseInt(this.state.product.price).toLocaleString('id-ID')}`;
+            if (this.state.product.note) { this.elements.selectedProductNote.textContent = this.state.product.note; this.elements.selectedProductNote.style.display = 'block'; }
+            else { this.elements.selectedProductNote.style.display = 'none'; }
+
+             this.checkFormValidity();
+        },
+        resetProductSelection() {
+            this.state.product = null;
+            this.elements.selectedProductDetails.style.display = 'none';
+            this.elements.productList.querySelectorAll('.card.active').forEach(item => item.classList.remove('active'));
+             this.checkFormValidity();
+             this.elements.errorMessage.classList.add('d-none');
+        },
+        async handleSubmit(event) {
+            event.preventDefault();
+            const { product } = this.state; const tujuan = this.elements.tujuanInput.value.trim();
+            if (!product || product.status !== 'available' || !tujuan) {
+                this.showError('Pilih produk yang tersedia dan isi nomor tujuan terlebih dahulu.');
+                this.checkFormValidity();
+                return;
+            }
+
+            const btn = this.elements.submitButton;
+            btn.disabled = true;
+            btn.classList.add('submitting');
+
+            this.elements.errorMessage.classList.add('d-none');
+            this.elements.errorMessageText.textContent = '';
+
+            try {
+                // Send the marked-up price obtained from /api/layanan to /api/buat-transaksi
+                const response = await fetch('/api/buat-transaksi', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ code: product.code, tujuan: tujuan, price: product.price }) // price sent is the marked-up one
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                     const errorMsg = data.message || `Transaksi gagal: ${response.statusText || response.status}`;
+                     throw new Error(errorMsg);
+                }
+                sessionStorage.setItem('pendingTransaction', JSON.stringify(data));
+                window.location.href = '/payment';
+
+            } catch (error) {
+                this.showError(error.message);
+                btn.disabled = false;
+                btn.classList.remove('submitting');
+            }
+        },
+        showError(message) {
+            this.elements.errorMessageText.textContent = message;
+            this.elements.errorMessage.classList.remove('d-none');
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+
+</html>
+
+

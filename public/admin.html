@@ -1,0 +1,606 @@
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Tambah & Kelola Produk</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <style>
+    /* Reset & base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin: 0;
+      font-weight: 600;
+      color: #343a40;
+      line-height: 1.2;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    button:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(13,110,253,.5);
+    }
+    input, textarea {
+      font-family: inherit;
+      font-size: 1rem;
+      border-radius: 0.375rem;
+      border: 1px solid #ced4da;
+      padding: 0.625rem 0.75rem;
+      width: 100%;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      color: #212529;
+      background-color: #fff;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #6c757d;
+      opacity: 1;
+    }
+    input:focus, textarea:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+      outline: none;
+      background-color: #fff;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    a {
+      color: #0d6efd;
+      text-decoration: none;
+    }
+    a:hover, a:focus {
+      text-decoration: underline;
+    }
+
+    /* Container */
+    .container {
+      max-width: 900px;
+      width: 100%;
+      background: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+      padding: 2rem 2.5rem;
+      box-sizing: border-box;
+    }
+
+    /* Header */
+    header {
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 1rem;
+      box-sizing: border-box;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      color: #0d6efd;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    header h1 i {
+      font-size: 1.5rem;
+    }
+    header button.logout-btn {
+      background-color: #dc3545;
+      color: white;
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    header button.logout-btn:hover,
+    header button.logout-btn:focus {
+      background-color: #bb2d3b;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(220,53,69,.5);
+    }
+
+    /* Form */
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+    form > div {
+      display: flex;
+      flex-direction: column;
+    }
+    form label {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #495057;
+      user-select: none;
+    }
+    form textarea {
+      grid-column: 1 / -1;
+      min-height: 120px;
+    }
+    form button {
+      grid-column: 1 / -1;
+      background-color: #0d6efd;
+      color: white;
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 1.125rem;
+      justify-content: center;
+      box-shadow: 0 0.25rem 0.5rem rgba(13,110,253,.4);
+      user-select: none;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    form button:hover,
+    form button:focus {
+      background-color: #0b5ed7;
+      box-shadow: 0 0.3rem 0.6rem rgba(11,94,215,.6);
+      outline: none;
+    }
+
+    /* Status message */
+    #status {
+      grid-column: 1 / -1;
+      font-weight: 600;
+      font-size: 1rem;
+      text-align: center;
+      min-height: 1.5rem;
+      user-select: none;
+      margin-top: -0.5rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+    #status.success {
+      color: #198754;
+    }
+    #status.error {
+      color: #dc3545;
+    }
+
+    /* Produk list */
+    .produk-list {
+      max-height: 480px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      box-shadow: inset 0 0 5px rgb(0 0 0 / 0.05);
+      background-color: #fff;
+    }
+    .produk-list h2 {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      background-color: #e9ecef;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #212529;
+      user-select: none;
+      margin: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .produk-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      gap: 1rem;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+    .produk-item:last-child {
+      border-bottom: none;
+    }
+    .produk-item:focus-within,
+    .produk-item:hover {
+      background-color: #f8f9fa;
+      outline: none;
+    }
+    .produk-image {
+      flex-shrink: 0;
+      width: 64px;
+      height: 64px;
+      border-radius: 0.375rem;
+      object-fit: cover;
+      border: 1px solid #ced4da;
+      background-color: #f1f3f5;
+    }
+    .produk-info {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .produk-info h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #212529;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .produk-info p {
+      font-size: 0.9rem;
+      color: #495057;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .produk-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .btn-hapus {
+      background-color: #dc3545;
+      color: white;
+      border-radius: 0.375rem;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: none;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    .btn-hapus:hover,
+    .btn-hapus:focus {
+      background-color: #bb2d3b;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(220,53,69,.5);
+    }
+    .btn-copy {
+      background-color: #0d6efd;
+      color: white;
+      border-radius: 0.375rem;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: none;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    .btn-copy:hover,
+    .btn-copy:focus {
+      background-color: #0b5ed7;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(13,110,253,.5);
+    }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #212529;
+      color: #fff;
+      text-align: center;
+      border-radius: 0.375rem;
+      padding: 0.4rem 0.5rem;
+      position: absolute;
+      z-index: 10;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+      user-select: none;
+      pointer-events: none;
+    }
+    .tooltip:hover .tooltiptext,
+    .tooltip:focus-within .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Scrollbar for produk list */
+    .produk-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    .produk-list::-webkit-scrollbar-track {
+      background: #f1f3f5;
+      border-radius: 0.375rem;
+    }
+    .produk-list::-webkit-scrollbar-thumb {
+      background: #adb5bd;
+      border-radius: 0.375rem;
+    }
+    .produk-list::-webkit-scrollbar-thumb:hover {
+      background: #868e96;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      form {
+        grid-template-columns: 1fr !important;
+      }
+      form textarea {
+        grid-column: 1 / 2 !important;
+      }
+      .produk-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .produk-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-start;
+        gap: 1rem;
+      }
+      .produk-image {
+        width: 100%;
+        height: 180px;
+        border-radius: 0.5rem;
+      }
+      header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+      header button.logout-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><i class="fas fa-tools" aria-hidden="true"></i> Admin Panel</h1>
+    <button class="logout-btn" title="Logout" aria-label="Logout" onclick="logout()">
+      <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+    </button>
+  </header>
+
+  <main class="container" role="main" aria-label="Admin product management">
+    <form id="formProduk" aria-describedby="status" novalidate>
+      <div>
+        <label for="nama">Nama Produk <sup aria-label="required">*</sup></label>
+        <input type="text" id="nama" name="nama" placeholder="Masukkan nama produk" required aria-required="true" autocomplete="off" />
+      </div>
+      <div>
+        <label for="deks">Deskripsi Singkat</label>
+        <input type="text" id="deks" name="deks" placeholder="Deskripsi singkat produk" autocomplete="off" />
+      </div>
+      <div style="grid-column: 1 / -1;">
+        <label for="fulldesk">Deskripsi Lengkap</label>
+        <textarea id="fulldesk" name="fulldesk" placeholder="Deskripsi lengkap produk"></textarea>
+      </div>
+      <div>
+        <label for="imageurl">URL Gambar</label>
+        <input type="text" id="imageurl" name="imageurl" placeholder="https://example.com/image.jpg" autocomplete="off" />
+      </div>
+      <div>
+        <label for="linkorder">Link Order (WA)</label>
+        <input type="text" id="linkorder" name="linkorder" placeholder="https://wa.me/..." autocomplete="off" />
+      </div>
+      <div style="grid-column: 1 / -1;">
+        <button type="submit" aria-label="Tambah produk baru">
+          <i class="fas fa-plus-circle" aria-hidden="true"></i> Tambah Produk
+        </button>
+      </div>
+      <div id="status" role="alert" aria-live="polite"></div>
+    </form>
+
+    <section class="produk-list" aria-label="Daftar produk">
+      <h2>Daftar Produk</h2>
+      <div id="produkContainer" tabindex="0" aria-live="polite" aria-relevant="additions removals" aria-atomic="true" style="min-height: 60px;">
+        Memuat data produk...
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Tambah produk baru
+    async function tambahProduk() {
+      const nama = document.getElementById("nama").value.trim();
+      const deks = document.getElementById("deks").value.trim();
+      const fulldesk = document.getElementById("fulldesk").value.trim();
+      const imageurl = document.getElementById("imageurl").value.trim();
+      const linkorder = document.getElementById("linkorder").value.trim();
+      const statusBox = document.getElementById("status");
+
+      statusBox.textContent = '';
+      statusBox.className = '';
+
+      if (!nama) {
+        statusBox.textContent = 'Nama produk wajib diisi.';
+        statusBox.className = 'error';
+        document.getElementById("nama").focus();
+        return;
+      }
+
+      try {
+        const res = await fetch('/produk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ nama, deks, fulldesk, imageurl, linkorder })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          statusBox.textContent = '✅ Produk berhasil ditambahkan!';
+          statusBox.className = 'success';
+          document.getElementById("formProduk").reset();
+          document.getElementById("nama").focus();
+          loadProduk();
+        } else {
+          statusBox.textContent = result.message || '❌ Gagal menambahkan produk.';
+          statusBox.className = 'error';
+        }
+      } catch (err) {
+        statusBox.textContent = '❌ Koneksi gagal, coba lagi.';
+        statusBox.className = 'error';
+      }
+    }
+
+    // Load daftar produk
+    async function loadProduk() {
+      const container = document.getElementById("produkContainer");
+      container.innerHTML = '<p style="padding:1rem; color:#6c757d; user-select:none;">Memuat data produk...</p>';
+      try {
+        const res = await fetch('/produk');
+        const result = await res.json();
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = '';
+          result.data.forEach(prod => {
+            const prodDiv = document.createElement('div');
+            prodDiv.className = 'produk-item';
+            prodDiv.setAttribute('tabindex', '0');
+            prodDiv.setAttribute('aria-label', `Produk ${prod.nama}`);
+
+            const img = document.createElement('img');
+            img.className = 'produk-image';
+            img.src = prod.imageurl && prod.imageurl.trim() !== '' ? prod.imageurl : 'https://placehold.co/64x64?text=No+Image';
+            img.alt = prod.nama + ' - gambar produk';
+            prodDiv.appendChild(img);
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'produk-info';
+
+            const title = document.createElement('h3');
+            title.textContent = prod.nama;
+            infoDiv.appendChild(title);
+
+            const desc = document.createElement('p');
+            desc.textContent = prod.deks && prod.deks.trim() !== '' ? prod.deks : 'Tidak ada deskripsi singkat.';
+            infoDiv.appendChild(desc);
+
+            prodDiv.appendChild(infoDiv);
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'produk-actions';
+
+            // Tombol salin link order jika ada
+            if (prod.linkorder && prod.linkorder.trim() !== '') {
+              const btnCopy = document.createElement('button');
+              btnCopy.className = 'btn-copy tooltip';
+              btnCopy.type = 'button';
+              btnCopy.setAttribute('aria-label', 'Salin link order ke clipboard');
+              btnCopy.innerHTML = '<i class="fas fa-copy" aria-hidden="true"></i>';
+              const tooltipSpan = document.createElement('span');
+              tooltipSpan.className = 'tooltiptext';
+              tooltipSpan.textContent = 'Salin Link Order';
+              btnCopy.appendChild(tooltipSpan);
+              btnCopy.onclick = () => {
+                navigator.clipboard.writeText(prod.linkorder).then(() => {
+                  tooltipSpan.textContent = 'Tersalin!';
+                  setTimeout(() => tooltipSpan.textContent = 'Salin Link Order', 1500);
+                }).catch(() => {
+                  tooltipSpan.textContent = 'Gagal menyalin';
+                  setTimeout(() => tooltipSpan.textContent = 'Salin Link Order', 1500);
+                });
+              };
+              actionsDiv.appendChild(btnCopy);
+            }
+
+            // Tombol hapus produk
+            const btnHapus = document.createElement('button');
+            btnHapus.className = 'btn-hapus';
+            btnHapus.type = 'button';
+            btnHapus.setAttribute('aria-label', `Hapus produk ${prod.nama}`);
+            btnHapus.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i> Hapus';
+            btnHapus.onclick = () => hapusProduk(prod._id, prod.nama);
+            actionsDiv.appendChild(btnHapus);
+
+            prodDiv.appendChild(actionsDiv);
+
+            container.appendChild(prodDiv);
+          });
+        } else {
+          container.innerHTML = '<p style="padding:1rem; color:#6c757d; user-select:none;">Belum ada produk.</p>';
+        }
+      } catch {
+        container.innerHTML = '<p style="padding:1rem; color:#dc3545; user-select:none;">❌ Gagal memuat data produk.</p>';
+      }
+    }
+
+    // Hapus produk
+    async function hapusProduk(id, nama) {
+      if (!confirm(`Yakin ingin menghapus produk "${nama}"?`)) return;
+      try {
+        const res = await fetch(`/produk/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert(`✅ Produk "${nama}" berhasil dihapus.`);
+          loadProduk();
+        } else {
+          alert(`❌ Gagal hapus produk: ${result.message}`);
+        }
+      } catch {
+        alert('❌ Koneksi gagal, coba lagi.');
+      }
+    }
+
+    // Logout
+    async function logout() {
+      try {
+        const res = await fetch('/logout', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.success) {
+          window.location.href = '/login';
+        } else {
+          alert('Gagal logout, coba lagi.');
+        }
+      } catch {
+        alert('Gagal logout, coba lagi.');
+      }
+    }
+
+    // Event listener form submit
+    document.getElementById('formProduk').addEventListener('submit', e => {
+      e.preventDefault();
+      tambahProduk();
+    });
+
+    // Load produk saat halaman siap
+    window.addEventListener('load', () => {
+      loadProduk();
+      document.getElementById("nama").focus();
+    });
+  </script>
+</body>
+</html>
