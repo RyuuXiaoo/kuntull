@@ -141,7 +141,7 @@ app.get('/api/layanan', async (req, res) => {
         if (response.data && response.data.success) {
             const layanan = response.data.data.map(item => {
                 const originalPrice = parseFloat(item.price);
-                const markup = Math.round(originalPrice * 1.0); // naik 15% dan dibulatkan
+                const markup = Math.round(originalPrice * 1.15); // naik 15% dan dibulatkan
                 return {
                     ...item,
                     price: markup.toString()
@@ -197,7 +197,7 @@ app.post('/api/buat-transaksi', async (req, res) => {
     }
 });
 
-app.get('/api/status', async (req, res) => {
+app.get('/api/cek-status-deposit', async (req, res) => {
     const { trxId } = req.query;
     if (!trxId || !transactions[trxId]) {
         return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan.' });
