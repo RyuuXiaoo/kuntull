@@ -9,7 +9,7 @@ const MongoStore = require('connect-mongo');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const CIAA_API_KEY = "CiaaTopUp_zrpkfiqrnoxcyysw";
+const CIAA_API_KEY = "CiaaTopUp_vyn43gpsya7n77yq";
 const CIAA_BASE_URL = "https://www.ciaatopup.my.id/h2h";
 
 const transactions = {};
@@ -197,7 +197,7 @@ app.post('/api/buat-transaksi', async (req, res) => {
     }
 });
 
-app.get('/api/cek-status-deposit', async (req, res) => {
+app.get('/api/status', async (req, res) => {
     const { trxId } = req.query;
     if (!trxId || !transactions[trxId]) {
         return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan.' });
@@ -264,6 +264,4 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
 });
-
-
 
