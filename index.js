@@ -141,7 +141,7 @@ app.get('/api/layanan', async (req, res) => {
         if (response.data && response.data.success) {
             const layanan = response.data.data.map(item => {
                 const originalPrice = parseFloat(item.price);
-                const markup = Math.round(originalPrice * 1.15); // naik 15% dan dibulatkan
+                const markup = Math.round(originalPrice * 1.0); // naik 15% dan dibulatkan
                 return {
                     ...item,
                     price: markup.toString()
@@ -264,5 +264,6 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
 });
+
 
 
