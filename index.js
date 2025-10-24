@@ -9,9 +9,8 @@ const MongoStore = require('connect-mongo');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const CIAA_API_KEY = "CiaaTopUp_vyn43gpsya7n77yq";
-const CIAA_BASE_URL = "https://anjani-mu.vercel.app/h2h";
-
+const CIAA_API_KEY = "CiaaTopUp_e53vxvqt655kmkra";
+const CIAA_BASE_URL = "https://ciaatopup.my.id/h2h
 const transactions = {};
 
 app.use(express.json());
@@ -264,5 +263,6 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
 });
+
 
 
