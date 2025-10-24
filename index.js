@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const CIAA_API_KEY = "CiaaTopUp_e53vxvqt655kmkra";
-const CIAA_BASE_URL = "https://ciaatopup.my.id/h2h
+const CIAA_BASE_URL = "https://ciaatopup.my.id/h2h"
 const transactions = {};
 
 app.use(express.json());
@@ -263,6 +263,7 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
 });
+
 
 
 
