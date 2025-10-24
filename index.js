@@ -196,7 +196,7 @@ app.post('/api/buat-transaksi', async (req, res) => {
     }
 });
 
-app.get('/api/cek-status-deposit', async (req, res) => {
+app.get('/api/status', async (req, res) => {
     const { trxId } = req.query;
     if (!trxId || !transactions[trxId]) {
         return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan.' });
