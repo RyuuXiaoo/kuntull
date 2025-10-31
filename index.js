@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // === Atlantic API Configuration ===
-const ATLANTIC_API_KEY = "h4wgEVYtYqTQqvUMWSx9dIFUjtN1LhH0oVzzz4Kt4eoGC42YfWxjh7PXpZpx8bKXH18m7OFa663h5K5xagEipOmtdpKUQQtFgIyo"; 
+const ATLANTIC_API_KEY = "ag23FwT1BnrszZ5CWfYWi4WJE67EkZHdgL3WhznIsOQY1tdXi2pcDZnmDi99w1vygZGel0Jo83SXhu0wUkfwQVFJV5gVGCij7aOM"; 
 const ATLANTIC_BASE_URL = "https://atlantich2h.com";
 
 const transactions = {};
@@ -222,5 +222,6 @@ app.get('/api/cek-status-order', async (req, res) => {
 
 // === Default Route ===
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
 
 app.listen(PORT, () => console.log(`Server berjalan di http://localhost:${PORT}`));
