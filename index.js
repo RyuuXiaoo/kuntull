@@ -9,8 +9,8 @@ const MongoStore = require('connect-mongo');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// === Atlantic API Configuration ===
-const ATLANTIC_API_KEY = "ag23FwT1BnrszZ5CWfYWi4WJE67EkZHdgL3WhznIsOQY1tdXi2pcDZnmDi99w1vygZGel0Jo83SXhu0wUkfwQVFJV5gVGCij7aOM"; 
+// === Atlantic API Config ===
+const ATLANTIC_API_KEY = "ag23FwT1BnrszZ5CWfYWi4WJE67EkZHdgL3WhznIsOQY1tdXi2pcDZnmDi99w1vygZGel0Jo83SXhu0wUkfwQVFJV5gVGCij7aOM"; // ⚠️ Ganti dengan API Key Atlantic kamu
 const ATLANTIC_BASE_URL = "https://atlantich2h.com";
 
 const transactions = {};
@@ -31,9 +31,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: mongoURI }),
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
-  }
+  cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
 const productSchema = new mongoose.Schema({
@@ -60,7 +58,7 @@ app.get('/topup', (req, res) => res.sendFile(path.join(__dirname, 'public', 'top
 app.get('/payment', (req, res) => res.sendFile(path.join(__dirname, 'public', 'payment.html')));
 app.get('/status', (req, res) => res.sendFile(path.join(__dirname, 'public', 'status.html')));
 
-// === Login System ===
+// === Login ===
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (username === 'admin' && password === 'rerezzganteng') {
@@ -104,11 +102,24 @@ app.delete('/produk/:id', isLoggedIn, async (req, res) => {
   }
 });
 
-// === Atlantic API ===
+// === Atlantic API Request Helper ===
 async function atlanticRequest(endpoint, params) {
   const form = new URLSearchParams(params);
-  const response = await axios.post(`${ATLANTIC_BASE_URL}${endpoint}`, form);
-  return response.data;
+  try {
+    const response = await axios.post(
+      `${ATLANTIC_BASE_URL}${endpoint}`,
+      form,
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 10000
+      }
+    );
+    console.log('[Atlantic Response]', response.data);
+    return response.data;
+  } catch (err) {
+    console.error('[Atlantic API Error]', err.response?.data || err.message);
+    throw err;
+  }
 }
 
 // === Get Price List ===
@@ -120,7 +131,10 @@ app.get('/api/layanan', async (req, res) => {
       type: 'prabayar'
     });
 
-    if (!result.status) return res.status(500).json({ success: false, message: result.message });
+    if (!result.status) {
+      console.error('[Atlantic Error]', result.message);
+      return res.status(500).json({ success: false, message: result.message });
+    }
 
     const layanan = result.data.map(item => {
       const originalPrice = parseFloat(item.price);
@@ -131,7 +145,7 @@ app.get('/api/layanan', async (req, res) => {
     res.json({ success: true, data: layanan });
   } catch (error) {
     console.error('[ERROR] Gagal mengambil layanan Atlantic:', error.message);
-    res.status(500).json({ success: false, message: 'Server error.' });
+    res.status(500).json({ success: false, message: 'Server error. Tidak dapat terhubung ke Atlantic API.' });
   }
 });
 
@@ -142,7 +156,7 @@ app.post('/api/buat-transaksi', async (req, res) => {
 
   try {
     const reffId = crypto.randomBytes(5).toString('hex').toUpperCase();
-    console.log(`[LOG] Membuat deposit Atlantic untuk transaksi: ${reffId} nominal ${price}`);
+    console.log(`[LOG] Membuat deposit Atlantic: ${reffId}, nominal ${price}`);
 
     const deposit = await atlanticRequest('/deposit/create', {
       api_key: ATLANTIC_API_KEY,
@@ -152,7 +166,10 @@ app.post('/api/buat-transaksi', async (req, res) => {
       metode: 'qrisfast'
     });
 
-    if (!deposit.status) return res.status(500).json({ success: false, message: deposit.message });
+    if (!deposit.status) {
+      console.error('[Atlantic Error]', deposit.message);
+      return res.status(500).json({ success: false, message: deposit.message });
+    }
 
     transactions[reffId] = {
       atlanticId: deposit.data.id,
@@ -165,63 +182,11 @@ app.post('/api/buat-transaksi', async (req, res) => {
     res.json({ success: true, trxId: reffId, payment: deposit.data });
   } catch (error) {
     console.error('[ERROR] Gagal membuat transaksi Atlantic:', error.message);
-    res.status(500).json({ success: false, message: 'Server error.' });
-  }
-});
-
-// === Cek Status Deposit ===
-app.get('/api/cek-status-deposit', async (req, res) => {
-  const { trxId } = req.query;
-  const trx = transactions[trxId];
-  if (!trx) return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan.' });
-
-  try {
-    const status = await atlanticRequest('/deposit/status', {
-      api_key: ATLANTIC_API_KEY,
-      id: trx.atlanticId
-    });
-
-    if (status.data.status === 'success') {
-      trx.status = 'membuat_order';
-      const order = await atlanticRequest('/order/create', {
-        api_key: ATLANTIC_API_KEY,
-        code: trx.productCode,
-        tujuan: trx.target
-      });
-
-      if (!order.status) return res.json({ depositStatus: 'success', orderStatus: 'failed_creation' });
-      trx.orderId = order.data.id;
-      trx.status = 'menunggu_hasil_order';
-      res.json({ depositStatus: 'success', orderId: trx.orderId });
-    } else {
-      res.json({ depositStatus: status.data.status });
-    }
-  } catch (error) {
-    console.error('[ERROR] Cek status deposit Atlantic:', error.message);
-    res.status(500).json({ success: false, message: 'Server error.' });
-  }
-});
-
-// === Cek Status Order ===
-app.get('/api/cek-status-order', async (req, res) => {
-  const { orderId } = req.query;
-  if (!orderId) return res.status(400).json({ success: false, message: 'ID Order tidak ada.' });
-
-  try {
-    const status = await atlanticRequest('/order/status', {
-      api_key: ATLANTIC_API_KEY,
-      id: orderId
-    });
-
-    res.json(status);
-  } catch (error) {
-    console.error('[ERROR] Gagal cek status order Atlantic:', error.message);
-    res.status(500).json({ success: false, message: 'Server error.' });
+    res.status(500).json({ success: false, message: 'Server error. Gagal membuat transaksi di Atlantic.' });
   }
 });
 
 // === Default Route ===
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-
-app.listen(PORT, () => console.log(`Server berjalan di http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server berjalan di http://localhost:${PORT}`));
